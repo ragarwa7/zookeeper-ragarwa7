@@ -6,7 +6,8 @@ import org.apache.zookeeper.ZooDefs;
 import org.apache.zookeeper.ZooKeeper;
 
 import java.io.UnsupportedEncodingException;
-import java.util.Scanner;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 import static com.zookeeper.app.Player.MASTER;
 
@@ -22,7 +23,6 @@ public class Player {
     }
 
     public void create(String name) throws KeeperException, InterruptedException, UnsupportedEncodingException {
-
         String path = MASTER + "/" + name;
         if(zooKeeper.exists(path, true) != null){
             System.out.println("Player already exist");
@@ -45,6 +45,34 @@ public class Player {
         }
     }
 
+
+    public void create(String name, int count, int delay, int score) throws KeeperException, InterruptedException, UnsupportedEncodingException {
+        String path = MASTER + "/" + name;
+        if(zooKeeper.exists(path, true) != null){
+            System.out.println("Player already exist");
+            System.exit(0);
+        }else {
+            int n = 0;
+            Random random = new Random();
+            double delaySd = 1.5;
+            double scoreSd = 10;
+            double delays = delay;
+            zooKeeper.create(path, String.valueOf(score).getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+            while(n < count){
+                TimeUnit.SECONDS.sleep((long) delays);
+                delays = random.nextGaussian() * delaySd + delay;
+                int newScore = (int) (random.nextGaussian() * scoreSd + score);
+                System.out.println("Adding new score:" + newScore);
+                update(path, String.valueOf(newScore));
+                updateMaster(name, String.valueOf(newScore));
+                n++;
+            }
+            ExitPlayer.zooKeeper = zooKeeper;
+            ExitPlayer exitPlayer = new ExitPlayer(name);
+            exitPlayer.updateMater(name);
+        }
+    }
+
     public static void update(String path, String data) throws KeeperException, InterruptedException, UnsupportedEncodingException {
         if(!data.matches("-?(0|[1-9]\\d*)")){
             System.out.println("Provide a valid score");
@@ -54,22 +82,28 @@ public class Player {
             scores = scores + "/" + data;
             zooKeeper.setData(path, scores.getBytes(), zooKeeper.exists(path, true).getVersion());
         }
+
     }
 
 
     public static void updateMaster(String user, String score) throws UnsupportedEncodingException, KeeperException, InterruptedException {
         byte[] readMaster = read(MASTER);
-        String scores = new String(readMaster, "UTF-8");
-        String[] playerList = scores.split("#");
-        scores = playerList[0] + "/" + user + ":" + score;
+        String masterScore = new String(readMaster, "UTF-8");
+        String[] playerList = masterScore.split("#");
+        String scores = playerList[0] + "/" + user + ":" + score;
+        String finalscores = "";
         if(playerList.length > 1){
-            if(!playerList[1].contains(user)) {
-                scores = scores + "#" + playerList[1] + "," + user;
+            String[] list = playerList[1].split(",");
+            List<String> list1 = Arrays.asList(list);
+            if(!list1.contains(user)) {
+                finalscores = scores + "#" + playerList[1] + "," + user;
+            }else{
+                finalscores = scores + "#" + playerList[1];
             }
         }else {
-            scores = scores + "#" + user;
+            finalscores = scores + "#" + user;
         }
-        zooKeeper.setData(MASTER, scores.getBytes(), zooKeeper.exists(MASTER, true).getVersion());
+        zooKeeper.setData(MASTER, finalscores.getBytes(), zooKeeper.exists(MASTER, true).getVersion());
     }
 }
 
@@ -82,8 +116,6 @@ class ExitPlayer extends Thread {
     @Override
     public void run() {
         try {
-            String path = MASTER + "/" + name;
-            zooKeeper.delete(path, zooKeeper.exists(path, true).getVersion());
             updateMater(name);
         } catch (InterruptedException e) {
             e.printStackTrace();
@@ -94,7 +126,9 @@ class ExitPlayer extends Thread {
         }
     }
 
-    private void updateMater(String name) throws UnsupportedEncodingException, KeeperException, InterruptedException {
+    public void updateMater(String name) throws UnsupportedEncodingException, KeeperException, InterruptedException {
+        String path = MASTER + "/" + name;
+        zooKeeper.delete(path, zooKeeper.exists(path, true).getVersion());
         byte[] readMaster = zooKeeper.getData(MASTER, true, zooKeeper.exists(MASTER, true));
         String scores = new String(readMaster, "UTF-8");
         String[] players =  scores.split("#");
@@ -109,7 +143,6 @@ class ExitPlayer extends Thread {
                 }
             }
         }
-        System.out.println(allLive);
         String updatedMaster = players[0] + "#" + allLive;
         zooKeeper.setData(MASTER, updatedMaster.getBytes(), zooKeeper.exists(MASTER, true).getVersion());
     }
