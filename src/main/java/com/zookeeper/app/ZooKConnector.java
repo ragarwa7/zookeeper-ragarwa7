@@ -12,7 +12,7 @@ public class ZooKConnector {
     private CountDownLatch countDownLatch = new CountDownLatch(1);
 
     public ZooKeeper connect(String host) throws IOException, InterruptedException, IllegalStateException {
-        zooKeeper = new ZooKeeper(host, 5000,new Watcher(){
+        zooKeeper = new ZooKeeper(host, 10000,new Watcher(){
             public void process(WatchedEvent event){
                 if (Event.KeeperState.SyncConnected == event.getState()) {
                     countDownLatch.countDown();
