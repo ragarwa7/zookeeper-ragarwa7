@@ -19,10 +19,7 @@ public class Watcher implements org.apache.zookeeper.Watcher {
     public void process(WatchedEvent watchedEvent) {
         byte[] readMaster;
         try {
-            readMaster = zooKeeper.getData(watchedPath, new Watcher(), zooKeeper.exists(watchedPath, true));
-            String scores = new String(readMaster, "UTF-8");
-            recentNMatch(scores);
-            NHighestScore(scores);
+            callMasterNode();
         } catch (KeeperException e) {
             e.printStackTrace();
         } catch (InterruptedException e) {
@@ -40,6 +37,7 @@ public class Watcher implements org.apache.zookeeper.Watcher {
         if(zooKeeper.exists(watchedPath,true) == null) {
             zooKeeper.create(watchedPath, (watchedPath + "/#").getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
         }
+        callMasterNode();
         Watcher watchPlayers = new Watcher();
         final CountDownLatch countDownLatch = new CountDownLatch(1);
         zooKeeper.getData(watchedPath, watchPlayers, zooKeeper.exists(watchedPath, true));
@@ -116,5 +114,12 @@ public class Watcher implements org.apache.zookeeper.Watcher {
                 count++;
             }
         }
+    }
+
+    private static void callMasterNode() throws UnsupportedEncodingException, KeeperException, InterruptedException {
+        byte[] readMaster = zooKeeper.getData(watchedPath, new Watcher(), zooKeeper.exists(watchedPath, true));
+        String scores = new String(readMaster, "UTF-8");
+        recentNMatch(scores);
+        NHighestScore(scores);
     }
 }
