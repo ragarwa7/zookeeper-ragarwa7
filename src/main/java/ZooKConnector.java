@@ -1,4 +1,3 @@
-package com.zookeeper.app;
 
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;

@@ -1,8 +1,5 @@
-package com.zookeeper.app;
 
-import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.WatchedEvent;
-import org.apache.zookeeper.ZooKeeper;
+import org.apache.zookeeper.*;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -12,7 +9,7 @@ import java.util.concurrent.TimeUnit;
 
 public class Watcher implements org.apache.zookeeper.Watcher {
 
-    private static final String watchedPath = "/ragarwa7";
+    private static final String watchedPath = "/watch";
     private static ZooKeeper zooKeeper;
     private static ZooKConnector zooKConnector;
     private static List<String> livePlayers;
@@ -22,7 +19,7 @@ public class Watcher implements org.apache.zookeeper.Watcher {
     public void process(WatchedEvent watchedEvent) {
         byte[] readMaster;
         try {
-            readMaster = zooKeeper.getData(watchedPath, true, zooKeeper.exists(watchedPath, true));
+            readMaster = zooKeeper.getData(watchedPath, new Watcher(), zooKeeper.exists(watchedPath, true));
             String scores = new String(readMaster, "UTF-8");
             recentNMatch(scores);
             NHighestScore(scores);
@@ -36,20 +33,17 @@ public class Watcher implements org.apache.zookeeper.Watcher {
     }
 
     public static void main(String[] args) throws InterruptedException, IOException, KeeperException {
-        String command;// = args[0];
-        String ipAddress = "localhost"; //args[1];
-        number_of_records = 2; //Integer.parseInt(args[2]);
+        String ipAddress = args[0];
+        number_of_records = Integer.parseInt(args[1]);
         zooKConnector = new ZooKConnector();
         zooKeeper = zooKConnector.connect(ipAddress);
-        Watcher watchPlayers = new Watcher();
-
-        final CountDownLatch countDownLatch = new CountDownLatch(1);
-        try {
-            zooKeeper.getData(watchedPath, watchPlayers, zooKeeper.exists(watchedPath, true));
-            countDownLatch.await(Integer.MAX_VALUE, TimeUnit.MILLISECONDS);
-        }catch (Exception e){
-
+        if(zooKeeper.exists(watchedPath,true) == null) {
+            zooKeeper.create(watchedPath, (watchedPath + "/#").getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
         }
+        Watcher watchPlayers = new Watcher();
+        final CountDownLatch countDownLatch = new CountDownLatch(1);
+        zooKeeper.getData(watchedPath, watchPlayers, zooKeeper.exists(watchedPath, true));
+        countDownLatch.await(Integer.MAX_VALUE, TimeUnit.MILLISECONDS);
     }
 
     private static void recentNMatch(String scores) throws KeeperException, InterruptedException, UnsupportedEncodingException {
@@ -61,6 +55,7 @@ public class Watcher implements org.apache.zookeeper.Watcher {
         }
         String[] recentPlayerList = players[0].split("/");
         int len = recentPlayerList.length - 1;
+        System.out.println();
         System.out.println("Most recent scores");
         System.out.println("-------------------");
         int count = 0;
@@ -102,6 +97,7 @@ public class Watcher implements org.apache.zookeeper.Watcher {
         List<Integer> integers = new ArrayList<Integer>(map.keySet());
         Collections.sort(integers);
         Collections.reverse(integers);
+        System.out.println();
         System.out.println("Highest scores");
         System.out.println("-------------------");
         int count = 0;

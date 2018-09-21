@@ -1,4 +1,3 @@
-package com.zookeeper.app;
 
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
@@ -10,13 +9,12 @@ import java.io.UnsupportedEncodingException;
 
 public class Player {
 
-    private static final String MASTER = "/test3";
+    private static final String MASTER = "/watch";
     private static ZooKeeper zooKeeper;
     private static ZooKConnector zooKConnector;
 
     public static void main(String[] arg) throws IOException, InterruptedException, KeeperException {
-        String command = arg[0];
-        String ipAddress = arg[1];
+        String ipAddress = arg[0];
         zooKConnector = new ZooKConnector();
         zooKeeper = zooKConnector.connect(ipAddress);
         initializeMasterNode();
@@ -28,7 +26,7 @@ public class Player {
     }
 
     private static void player(String[] arg) throws InterruptedException, UnsupportedEncodingException, KeeperException {
-        String name = arg[2];
+        String name = arg[1];
         Play play = new Play();
         Play.zooKConnector = zooKConnector;
         Play.zooKeeper = zooKeeper;
@@ -37,10 +35,10 @@ public class Player {
 
     private static void automatedPlayer(String[] arg) throws InterruptedException, UnsupportedEncodingException, KeeperException {
         int n = 0;
-        String name = arg[2];
-        int count = Integer.parseInt(arg[3]);
-        int delay = Integer.parseInt(arg[4]);
-        int score = Integer.parseInt(arg[5]);
+        String name = arg[1];
+        int count = Integer.parseInt(arg[2]);
+        int delay = Integer.parseInt(arg[3]);
+        int score = Integer.parseInt(arg[4]);
 
         Play play = new Play();
         Play.zooKConnector = zooKConnector;

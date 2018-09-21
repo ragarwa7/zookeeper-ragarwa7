@@ -1,4 +1,3 @@
-package com.zookeeper.app;
 
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
@@ -9,13 +8,12 @@ import java.io.UnsupportedEncodingException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
-import static com.zookeeper.app.Play.MASTER;
 
 public class Play {
 
     public static ZooKeeper zooKeeper;
     public static ZooKConnector zooKConnector;
-    public static final String MASTER = "/test3";
+    public static final String MASTER = "/watch";
     int exitCount = 0;
 
     public static byte[] read(String path1) throws KeeperException, InterruptedException {
@@ -107,6 +105,8 @@ public class Play {
 }
 
 class ExitPlayer extends Thread {
+
+    public static final String MASTER = "/watch";
     String name;
     public static ZooKeeper zooKeeper;
     ExitPlayer(String name){
