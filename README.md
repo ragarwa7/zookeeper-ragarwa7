@@ -1,7 +1,7 @@
 # zookeeper-ragarwa7
 Zookeeper HW1 - Data Intensive Computing
 
-## Steps to execute using pre-compiled jar files: 
+## Execution steps using pre-compiled jar files: 
     a. Download player.jar & watcher.jar  
     b. In command window, navigate to the directory where the jars are downloaded.
     c. Start Watcher following below syntax:
